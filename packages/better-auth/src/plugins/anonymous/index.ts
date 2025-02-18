@@ -192,19 +192,32 @@ export const anonymous = (options?: AnonymousOptions) => {
 							return;
 						}
 						/**
-						 * Make sure the use had an anonymous session.
+						 * Make sure the user had an anonymous session.
 						 */
-						const session = await getSessionFromCtx<{ isAnonymous: boolean }>(
+						let session = await getSessionFromCtx<{ isAnonymous: boolean }>(
 							ctx,
 							{
 								disableRefresh: true,
 							},
 						);
-
 						if (!session || !session.user.isAnonymous) {
 							return;
 						}
+						const state = ctx.query?.state;
 
+						console.log({ state });
+						if (!state) {
+							return;
+						}
+						const verificationValue =
+							await ctx.context.internalAdapter.findVerificationValue(
+								`anon-${state}`,
+							);
+						console.log({ verificationValue });
+						if (!verificationValue) {
+							return;
+						}
+						session = JSON.parse(verificationValue.value);
 						if (ctx.path === "/sign-in/anonymous") {
 							throw new APIError("BAD_REQUEST", {
 								message:
@@ -215,15 +228,46 @@ export const anonymous = (options?: AnonymousOptions) => {
 						if (!newSession) {
 							return;
 						}
-						if (options?.onLinkAccount) {
+						if (options?.onLinkAccount && session) {
 							await options?.onLinkAccount?.({
 								anonymousUser: session,
 								newUser: newSession,
 							});
 						}
-						if (!options?.disableDeleteAnonymousUser) {
+						if (!options?.disableDeleteAnonymousUser && session) {
 							await ctx.context.internalAdapter.deleteUser(session.user.id);
 						}
+					}),
+				},
+				{
+					matcher(context) {
+						const setCookie = context.responseHeader.get("set-cookie");
+						const hasSessionToken = setCookie?.includes(
+							context.context.authCookies.sessionToken.name,
+						);
+						return context.path.startsWith("/sign-in/social");
+					},
+					handler: createAuthMiddleware(async (ctx) => {
+						const session = await getSessionFromCtx(ctx);
+						console.log({ session });
+						if (!session || !session.user.isAnonymous) {
+							return;
+						}
+						const returned = (await ctx.context?.returned?.json()) as {
+							url: string;
+						};
+						if (!returned.url) {
+							return;
+						}
+						const state = new URL(returned.url).searchParams.get("state");
+						console.log("Generated state: ", state);
+						const res =
+							await ctx.context.internalAdapter.createVerificationValue({
+								value: JSON.stringify(session),
+								identifier: `anon-${state}`,
+								expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+							});
+						console.log({ res });
 					}),
 				},
 			],
