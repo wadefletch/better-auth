@@ -30,10 +30,10 @@ const signUpSchema = z
 				message: "Invalid file type. Only images are allowed.",
 				path: ["image"],
 			}),
-		password: z.string().min(6, "Password must be at least 6 characters"),
+		password: z.string().min(8, "Password must be at least 8 characters"),
 		passwordConfirmation: z
 			.string()
-			.min(6, "Password must be at least 6 characters"),
+			.min(8, "Password must be at least 6 characters"),
 	})
 
 	.refine((data) => data.password === data.passwordConfirmation, {
