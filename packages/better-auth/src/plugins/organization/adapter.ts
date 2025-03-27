@@ -642,5 +642,22 @@ export const getOrgAdapter = (
 			});
 			return invitation;
 		},
+		cancelInvitations: async (data: {
+			email: string;
+			organizationId: string;
+		}) => {
+			const invitations = await adapter.updateMany({
+				model: "invitation",
+				where: [
+					{ field: "email", value: data.email },
+					{ field: "organizationId", value: data.organizationId },
+					{ field: "status", value: "pending" },
+				],
+				update: {
+					status: "canceled",
+				},
+			});
+			return invitations;
+		},
 	};
 };

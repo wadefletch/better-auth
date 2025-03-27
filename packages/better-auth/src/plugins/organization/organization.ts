@@ -160,6 +160,13 @@ export interface OrganizationOptions {
 	 */
 	invitationExpiresIn?: number;
 	/**
+	 * Cancel pending invitations for an email
+	 * when a new invitation is created.
+	 *
+	 * @default false
+	 */
+	cancelPendingInvitationsOnResend?: boolean;
+	/**
 	 * Send an email with the
 	 * invitation link to the user.
 	 *

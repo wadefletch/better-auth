@@ -205,6 +205,13 @@ export const createInvitation = <O extends OrganizationOptions | undefined>(
 						ORGANIZATION_ERROR_CODES.USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION,
 				});
 			}
+			// Cancel all pending invitations for the user
+			if (ctx.context.orgOptions.cancelPendingInvitationsOnResend) {
+				await adapter.cancelInvitations({
+					email: ctx.body.email,
+					organizationId: organizationId,
+				});
+			}
 			const invitation = await adapter.createInvitation({
 				invitation: {
 					role: roles,
