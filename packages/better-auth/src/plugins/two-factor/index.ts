@@ -158,7 +158,6 @@ export const twoFactor = (options?: TwoFactorOptions) => {
 							.string({
 								description: "User password",
 							})
-							.min(8),
 					}),
 					use: [sessionMiddleware],
 					metadata: {
